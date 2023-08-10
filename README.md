@@ -4,7 +4,7 @@ Welcome to the DiscreetNet App! This application allows you to communicate secur
 
 Feedback and Support
 
-We value your feedback and are committed to making DiscreetNet better with every update. If you have any questions, suggestions, or need assistance, please contact our support team at support@discreetnet.com.
+We value your feedback and are committed to making DiscreetNet better with every update. If you have any questions, suggestions, or need assistance, please contact our support team at emmanuelhudson355@gmail.com,
 Terms of Use and Privacy Policy
 
 Before using the DiscreetNet app, please read and understand our Terms of Use and Privacy Policy, available on our website.
