@@ -1,20 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
-import { StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import axios from "axios";
 
 function Signup() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
   const handleSignup = async () => {
+    setLoading(true);
     try {
       console.log("Signing up...");
-      console.log(username)
-      console.log(password)
-      const response = await fetch(`http://192.168.43.147:5000/register`, {
+      console.log(username);
+      console.log(password);
+      const response = await fetch(`https://discreetnetsv.onrender.com/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -24,24 +26,24 @@ function Signup() {
           password: password,
         }),
       });
-  
+
       const responseData = await response.text(); // Read raw response as text
-  
+
       console.log("Signup response:", responseData);
-  
+
       if (response.status === 200) {
-        navigation.navigate('SetProfile', { params1: username})
+        navigation.navigate('SetProfile', { params1: username });
       }
-  
+
     } catch (error) {
       console.error("Signup error:", error);
+    } finally {
+      setLoading(false);
     }
   };
-  
-  
 
   const toLogin = () => {
-    navigation.navigate('Login')
+    navigation.navigate('Login');
   }
 
   return (
@@ -63,8 +65,12 @@ function Signup() {
         value={password}
         onChangeText={setPassword}
       />
-      <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
-        <Text style={styles.signupButtonText}>Sign Up</Text>
+      <TouchableOpacity style={styles.signupButton} onPress={handleSignup} disabled={loading}>
+        {loading ? (
+          <ActivityIndicator size="small" color="blue" /> // Show loading indicator while signing up
+        ) : (
+          <Text style={styles.signupButtonText}>Sign Up</Text>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={toLogin} >

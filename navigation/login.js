@@ -1,54 +1,59 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
-import { StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import axios from "axios";
 
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showPop, setShowPop] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [showPop, setShowPop] = useState(false);
   const navigation = useNavigation();
 
   const loginUser = async () => {
-    console.log('Logging in...')
-    console.log(username)
-    console.log(password)
-    const response = await fetch(`http://192.168.43.147:5000/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: username,
-        password: password
-      })
-    })
+    setLoading(true);
+    console.log('Logging in...');
+    console.log(username);
+    console.log(password);
 
-    const responseData = await response.text(); // Read raw response as text
-    console.log(response.status)
-  
-    console.log("Login response:", responseData);
-    if (response.status === 200) {
-      navigation.navigate('Home', { params1: username })
-    } else {
-      console.log('Signing unsuccessful')
+    try {
+      const response = await fetch(`https://discreetnetsv.onrender.com/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password
+        })
+      });
+
+      const responseData = await response.text(); // Read raw response as text
+      console.log(response.status);
+
+      console.log("Login response:", responseData);
+      if (response.status === 200) {
+        navigation.navigate('Home', { params1: username });
+      } else {
+        setShowPop(true); // Show user not found message
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-
   const toSignUp = () => {
-    navigation.navigate('Signup')
+    navigation.navigate('Signup');
   }
 
   return (
     <View style={styles.container}>
       <StatusBar hidden />
       <Text style={styles.header}>DiscreetNet</Text>
-      {showPop && (
-        <Text>User not found</Text>
-      )}
+      {showPop && <Text>User not found</Text>}
       <TextInput
         placeholder="Username"
         placeholderTextColor="white"
@@ -64,8 +69,12 @@ function Login() {
         value={password}
         onChangeText={setPassword}
       />
-      <TouchableOpacity style={styles.loginButton} onPress={loginUser}>
-        <Text style={styles.loginButtonText}>Log In</Text>
+      <TouchableOpacity style={styles.loginButton} onPress={loginUser} disabled={loading}>
+        {loading ? (
+          <ActivityIndicator size="small" color="blue" /> // Show loading indicator while logging in
+        ) : (
+          <Text style={styles.loginButtonText}>Log In</Text>
+        )}
       </TouchableOpacity>
       <TouchableOpacity onPress={toSignUp}>
         <Text style={styles.t1}>New User? Signup Here</Text>
