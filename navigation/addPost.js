@@ -64,7 +64,7 @@ const uploadImage = async () => {
       console.log(selectedImage)
 
       
-      const response = await fetch(`https://discreetnetsv.onrender.com/addPost/${params2}`, {
+      const response = await fetch(`http://192.168.43.147:5000/addPost/${params2}`, {
           method: 'POST',
           headers: {
               'Content-Type': 'multipart/form-data',

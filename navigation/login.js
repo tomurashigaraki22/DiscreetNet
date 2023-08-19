@@ -53,7 +53,7 @@ function Login() {
     <View style={styles.container}>
       <StatusBar hidden />
       <Text style={styles.header}>DiscreetNet</Text>
-      {showPop && <Text>User not found</Text>}
+      {showPop && <Text style={styles.notFound}>User not found</Text>}
       <TextInput
         placeholder="Username"
         placeholderTextColor="white"
@@ -89,6 +89,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#000", // Background color for dark mode effect
     alignItems: "center",
     justifyContent: "center",
+  },
+  notFound: {
+    color: 'red',
+    fontSize: 15,
   },
   header: {
     fontSize: 36,

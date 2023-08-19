@@ -10,6 +10,7 @@ import AddPost from './navigation/addPost';
 import HomeScreen from './navigation/Home';
 import ProfilePage from './navigation/ProfilePage';
 import EditProfile from './navigation/editProfile';
+import SearchScreen from './navigation/Search';
 
 const Stack = createStackNavigator();
 
@@ -24,6 +25,7 @@ export default function App() {
         <Stack.Screen name='Profile' component={ProfilePage} options={{ headerShown: false}} />
         <Stack.Screen name='AddPost' component={AddPost} options={{ headerShown: false }} />
         <Stack.Screen name='EditProfile' component={EditProfile} options={{ headerShown: false }} />
+        <Stack.Screen name='Search' component={SearchScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

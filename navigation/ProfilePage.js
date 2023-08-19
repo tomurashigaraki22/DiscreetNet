@@ -3,18 +3,22 @@ import { StatusBar } from "expo-status-bar";
 import { Text, View, StyleSheet, Image, FlatList } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { ActivityIndicator } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
-function ProfilePage() {
+function ProfilePage({ route }) {
   const [profileData, setProfileData] = useState({});
   const [postsData, setPostsData] = useState([]);
   const [isLoading, setIsLoading] = useState(true); // New state to track loading
+  const navigation = useNavigation();
+  const { params3 } = route.params;
 
   const editProfile = () => {
     console.log('Editing')
+    navigation.navigate('EditProfile')
   }
 
   useEffect(() => {
-    fetch(`http://192.168.43.147:5000/getProfile/portable`)
+    fetch(`http://192.168.43.147:5000/getProfile/${params3}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -28,7 +32,7 @@ function ProfilePage() {
         console.error('Fetch error:', err);
       });
   
-    fetch(`https://discreetnetsv.onrender.com/home/portable`)
+    fetch(`http://192.168.43.147:5000/home/${params3}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -37,7 +41,11 @@ function ProfilePage() {
       })
       .then((data) => {
         setPostsData(data);
+        console.log(data)
         setIsLoading(false); // Set loading to false when data is fetched
+        if (!data) {
+          setIsLoading(true)
+        }
       })
       .catch((err) => {
         console.error(err);
@@ -69,7 +77,7 @@ function ProfilePage() {
             {isLoading ? (
                 <Text style={styles.stats}>0 Posts</Text>
             ) : (
-                <Text style={styles.stats}>{postsData.posts.length} Posts</Text>
+                <Text style={styles.stats}>{postsData.posts ? postsData.posts.length : '0'} Posts</Text>
             )}
             <Text style={styles.stats}>{profileData.followers} followers</Text>
             <Text style={styles.stats}>{profileData.following} following</Text>
@@ -89,7 +97,7 @@ function ProfilePage() {
             <View style={styles.postContainer}>
               <Image
                 style={styles.postImage}
-                source={{ uri: `https://discreetnetsv.onrender.com/${item.img}` }}
+                source={{ uri: `http://192.168.43.147:5000/${item.img}` }}
               />
             </View>
           )}

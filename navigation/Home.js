@@ -8,15 +8,14 @@ import { Ionicons } from "react-native-vector-icons"; // Import Ionicons
 import { ActivityIndicator } from "react-native";
 import io from "socket.io-client";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-
-
-
+import TabBar from "./tabBar";
 
 function HomeScreen({ route }) {
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDarkMode, setisDarkMode] = useState(false);
+  const [usernameOther, setUsernameOther] = useState("");
   const { params1 } = route.params;
   const { params2 } = route.params;
   const navigation = useNavigation();
@@ -25,32 +24,32 @@ function HomeScreen({ route }) {
   const toggleDarkMode = () => {
     setisDarkMode(!isDarkMode);
   };
-  if (params1) {
-    useEffect(() => {
-      fetch(`https://discreetnetsv.onrender.com/home/${params1}`)
+  useEffect(() => {
+    if (params1) {
+      fetch(`http://192.168.43.147:5000/main/${params1}`)
         .then((response) => response.json())
         .then((data) => {
-          setPosts(data.posts);
+          setPosts(data.posts.reverse());
           setIsLoading(false);
         })
         .catch((error) => console.error(error));
-    }, [params1]);
-  }
-  else if (params2){
-    useEffect(() => {
-      fetch(`https://discreetnetsv.onrender.com/home/${params2}`)
+    }
+    if (params2) {
+      fetch(`http://192.168.43.147:5000/main/${params2}`)
         .then((response) => response.json())
         .then((data) => {
-          setPosts(data.posts);
+          setPosts(data.posts.reverse());
           setIsLoading(false);
         })
         .catch((error) => console.error(error));
-    }, [params2]);
-  }
+    }
+  }, [params1, params2]);
+  
+  
 
   useEffect(() => {
     // Establish a WebSocket connection
-    const socket = io(`https://discreetnetsv.onrender.com/addLike/${params1}`);
+    const socket = io(`http://192.168.43.147:5000/addLike/${params1}`);
     console.log('Running')
     
     // Listen for real-time updates
@@ -80,7 +79,7 @@ function HomeScreen({ route }) {
   const handleRefresh = () => {
     setIsRefreshing(true);
 
-    fetch(`https://discreetnetsv.onrender.com/home/${params1}`)
+    fetch(`http://192.168.43.147:5000/main/${params1}`)
       .then((response) => response.json())
       .then((data) => {
         setPosts(data.posts.reverse());
@@ -117,7 +116,13 @@ function HomeScreen({ route }) {
     })
     .catch((error) => console.error(error));
   }
-  
+
+
+  const handleProfileNavigation = (usernames) => {
+    setUsernameOther(usernames); // Set the usernameOther value
+    console.log(usernameOther)
+    navigation.navigate('Profile', { params3 : usernames })
+  };  
   
 
   return (
@@ -125,7 +130,8 @@ function HomeScreen({ route }) {
       
     <StatusBar hidden />
     <View style={styles.header}>
-      <Text style={styles.headerText}>DiscreetNet</Text>
+      
+      <Text style={isDarkMode ? styles.darkHeaderText : styles.headerText}>DiscreetNet</Text>
       <TouchableOpacity
         style={styles.darkModeButton}
         onPress={toggleDarkMode}
@@ -139,27 +145,31 @@ function HomeScreen({ route }) {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.addPostButton}
-        onPress={() => navigation.navigate("AddPost", { params2: params1, refreshCallback: handleRefresh })}
+        onPress={() => navigation.navigate("AddPost", { params2: params1 })}
       >
-        <AntDesign name="plus" size={24} color="black" />
+        {isDarkMode ? (
+          <AntDesign name="plus" size={24} color='white' />
+        ): (
+          <AntDesign name="plus" size={24} color="black" />
+        )}
       </TouchableOpacity>
     </View>
       {isLoading ? (
         <ActivityIndicator size="large" color="blue" style={styles.loadingIndicator} />
       ) : (
         <FlatList
-          data={posts.reverse()}
+          data={posts}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
             <View style={isDarkMode ? styles.darksContainer : styles.postContainer}>
               <View style={styles.postHeader}>
-                <Image source={{ uri: `https://discreetnetsv.onrender.com/${item.img}` }} style={styles.profileImage} />
-                <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+                <Image source={{ uri: `http://192.168.43.147:5000/${item.img}` }} style={styles.profileImage} />
+                <TouchableOpacity onPress={() => handleProfileNavigation(item.username)}>
                   <Text style={isDarkMode ? styles.darkUsername : styles.username}>{item.username}</Text>
                 </TouchableOpacity>
                 <AntDesign name="ellipsis1" size={24} color="black" style={styles.threebutton}/>
               </View>
-              <Image source={{ uri: `https://discreetnetsv.onrender.com/${item.img}` }} style={styles.postImage} />
+              <Image source={{ uri: `http://192.168.43.147:5000/${item.img}` }} style={styles.postImage} />
               <View style={styles.iconBar}>
                 <View style={styles.iconBarLeft}>
                   <TouchableOpacity onPress={() => addLike(item.likes, item.caption)}>
@@ -182,6 +192,7 @@ function HomeScreen({ route }) {
           }
         />
       )}
+      <TabBar/>
     </View>
   );
 }
@@ -214,6 +225,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 10,
     marginBottom: 10,
+  },
+  darkHeaderText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    fontStyle: 'italic',
+    color: 'white'
   },
   headerText: {
     fontSize: 24,
