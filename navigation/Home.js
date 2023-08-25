@@ -43,7 +43,7 @@ function HomeScreen() {
   };
   useEffect(() => {
     if (params1) {
-      fetch(`http://192.168.42.144:5000/main/${params1}`)
+      fetch(`https://discreetnetsv.onrender.com/main/${params1}`)
       .then((response) => response.json())
       .then((data) => {
         console.log('Here: ' + data)
@@ -64,7 +64,7 @@ function HomeScreen() {
     }
 
     if (params2) {
-      fetch(`http://192.168.42.144:5000/main/${params2}`)
+      fetch(`https://discreetnetsv.onrender.com/main/${params2}`)
         .then((response) => response.json())
         .then((data) => {
           if (data.posts.length > 0) {
@@ -88,7 +88,7 @@ function HomeScreen() {
 
   useEffect(() => {
     // Establish a WebSocket connection
-    const socket = io(`http://192.168.42.144:5000/addLike/${params1}`);
+    const socket = io(`https://discreetnetsv.onrender.com/addLike/${params1}`);
     console.log('Running')
     
     // Listen for real-time updates
@@ -118,7 +118,7 @@ function HomeScreen() {
   const handleRefresh = () => {
     setIsRefreshing(true);
 
-    fetch(`http://192.168.42.144:5000/main/${params1}`)
+    fetch(`https://discreetnetsv.onrender.com/main/${params1}`)
       .then((response) => response.json())
       .then((data) => {
         if (data.posts.length > 0){
@@ -152,7 +152,7 @@ function HomeScreen() {
       formdata.append('id', caption)
     }
     
-    fetch(`http://192.168.42.144:5000/addLike/${params1}`, {
+    fetch(`https://discreetnetsv.onrender.com/addLike/${params1}`, {
       method: 'POST',
       body: formdata, // Use the FormData as the request body
     })
@@ -236,7 +236,7 @@ function HomeScreen() {
           <AntDesign name="ellipsis1" size={24} color="black" style={styles.threebutton}/>
         </View>
         <Image
-          source={{ uri: `http://192.168.42.144:5000/${item.img}` }}
+          source={{ uri: `https://discreetnetsv.onrender.com/${item.img}` }}
           style={{
             width: "100%",
             height: nums, // Use item.height directly
