@@ -15,11 +15,10 @@ function SearchScreen() {
     const handleSearch = () => {
         // Perform the search logic here
         console.log("Searching for:", searchQuery);
-        fetch(`http://192.168.43.147:5000/search/${searchQuery}`)
+        fetch(`http://192.168.42.144:5000/search/${searchQuery}`)
             .then((response) => response.json())
             .then((data) => {
                 setSearchResults(data)
-                console.log(data)
             })
             .catch((error) => {
                 console.error(error)
@@ -27,8 +26,8 @@ function SearchScreen() {
     };
 
     const checkProfile = (username) => {
-        console.log(username)
-        navigation.navigate('Profile', { params3: username })
+    
+        navigation.navigate('Profile', { params3: username, params1: params1 })
     }
 
     return (

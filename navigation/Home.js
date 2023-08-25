@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { View, Text, FlatList, Image, StyleSheet, RefreshControl } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
@@ -7,39 +7,78 @@ import { AntDesign } from "@expo/vector-icons";
 import { Ionicons } from "react-native-vector-icons"; // Import Ionicons
 import { ActivityIndicator } from "react-native";
 import io from "socket.io-client";
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import TabBar from "./tabBar";
 
-function HomeScreen({ route }) {
+function HomeScreen() {
   const [posts, setPosts] = useState([]);
+  const route = useRoute()
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDarkMode, setisDarkMode] = useState(false);
+  const [noneFollowing, setNoneFollowing] = useState(false)
   const [usernameOther, setUsernameOther] = useState("");
+  const [notifs, setNotifs] = useState([])
   const { params1 } = route.params;
   const { params2 } = route.params;
   const navigation = useNavigation();
+  const sockets = io(`http://192.168.42.178:5000`)
 
+  useEffect(() => {
+    sockets.connect();
+
+    sockets.on('notification', data => {
+      const newNotification = {username: data.username, message: data.message}
+      setNotifs(prevNotifications => [...prevNotifications, newNotification]);
+      console.log(notifs)
+    })
+
+  // Clean up on unmount
+  return () => {
+    sockets.disconnect();
+  };
+}, []);
 
   const toggleDarkMode = () => {
     setisDarkMode(!isDarkMode);
   };
   useEffect(() => {
     if (params1) {
-      fetch(`http://192.168.43.147:5000/main/${params1}`)
-        .then((response) => response.json())
-        .then((data) => {
+      fetch(`http://192.168.42.144:5000/main/${params1}`)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log('Here: ' + data)
+        if (data.posts.length > 0) {
           setPosts(data.posts.reverse());
           setIsLoading(false);
-        })
-        .catch((error) => console.error(error));
+          setNoneFollowing(false)
+        } else {
+          const main = {
+            text: 'Follow your first user to get started'
+          };
+          setNoneFollowing(true)
+          setPosts([main]); // Set an array containing the main object
+          setIsLoading(false);
+        }
+      })
+      .catch((error) => console.error(error));
     }
+
     if (params2) {
-      fetch(`http://192.168.43.147:5000/main/${params2}`)
+      fetch(`http://192.168.42.144:5000/main/${params2}`)
         .then((response) => response.json())
         .then((data) => {
-          setPosts(data.posts.reverse());
-          setIsLoading(false);
+          if (data.posts.length > 0) {
+            setPosts(data.posts.reverse());
+            setNoneFollowing(false)
+            setIsLoading(false);
+          } else {
+            const main = {
+              text: 'Follow your first user to get started'
+            };
+            setNoneFollowing(true)
+            setPosts([main]); // Set an array containing the main object
+            setIsLoading(false);
+          }
         })
         .catch((error) => console.error(error));
     }
@@ -49,7 +88,7 @@ function HomeScreen({ route }) {
 
   useEffect(() => {
     // Establish a WebSocket connection
-    const socket = io(`http://192.168.43.147:5000/addLike/${params1}`);
+    const socket = io(`http://192.168.42.144:5000/addLike/${params1}`);
     console.log('Running')
     
     // Listen for real-time updates
@@ -79,11 +118,18 @@ function HomeScreen({ route }) {
   const handleRefresh = () => {
     setIsRefreshing(true);
 
-    fetch(`http://192.168.43.147:5000/main/${params1}`)
+    fetch(`http://192.168.42.144:5000/main/${params1}`)
       .then((response) => response.json())
       .then((data) => {
-        setPosts(data.posts.reverse());
-        setIsRefreshing(false);
+        if (data.posts.length > 0){
+          setPosts(data.posts.reverse());
+          setIsRefreshing(false);
+          setNoneFollowing(false)
+          setIsLoading(false)
+        } else {
+          setNoneFollowing(true)
+        }
+        
       })
       .catch((error) => {
         console.error(error);
@@ -106,7 +152,7 @@ function HomeScreen({ route }) {
       formdata.append('id', caption)
     }
     
-    fetch(`https://discreetnetsv.onrender.com/addLike/${params1}`, {
+    fetch(`http://192.168.42.144:5000/addLike/${params1}`, {
       method: 'POST',
       body: formdata, // Use the FormData as the request body
     })
@@ -121,7 +167,7 @@ function HomeScreen({ route }) {
   const handleProfileNavigation = (usernames) => {
     setUsernameOther(usernames); // Set the usernameOther value
     console.log(usernameOther)
-    navigation.navigate('Profile', { params3 : usernames })
+    navigation.navigate('Profile', { params3 : usernames, params1: params1 })
   };  
   
 
@@ -154,45 +200,74 @@ function HomeScreen({ route }) {
         )}
       </TouchableOpacity>
     </View>
-      {isLoading ? (
-        <ActivityIndicator size="large" color="blue" style={styles.loadingIndicator} />
-      ) : (
-        <FlatList
-          data={posts}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
-            <View style={isDarkMode ? styles.darksContainer : styles.postContainer}>
-              <View style={styles.postHeader}>
-                <Image source={{ uri: `http://192.168.43.147:5000/${item.img}` }} style={styles.profileImage} />
-                <TouchableOpacity onPress={() => handleProfileNavigation(item.username)}>
-                  <Text style={isDarkMode ? styles.darkUsername : styles.username}>{item.username}</Text>
-                </TouchableOpacity>
-                <AntDesign name="ellipsis1" size={24} color="black" style={styles.threebutton}/>
-              </View>
-              <Image source={{ uri: `http://192.168.43.147:5000/${item.img}` }} style={styles.postImage} />
-              <View style={styles.iconBar}>
-                <View style={styles.iconBarLeft}>
-                  <TouchableOpacity onPress={() => addLike(item.likes, item.caption)}>
-                    <AntDesign name="hearto" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
-                  </TouchableOpacity>
-                  <AntDesign name="message1" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
-                  <AntDesign name="paperclip" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
-                </View>
-              </View>
-              <Text style={isDarkMode ? styles.darkLikes : styles.likes}>{item.likes} likes</Text>
-              <Text style={isDarkMode ? styles.darkCaption : styles.caption}>{item.caption}</Text>
-            </View>
-          )}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              colors={["blue"]}
-            />
-          }
+    {noneFollowing ? (
+    <View style={styles.emptyContainer}>
+    <Text style={styles.emptyMessage}>Follow your first user to get started</Text>
+    <RefreshControl
+      refreshing={isRefreshing}
+      onRefresh={handleRefresh}
+      colors={["blue"]}
+    />
+  </View>) : (
+    <FlatList
+    data={posts}
+    keyExtractor={(item, index) => index.toString()}
+    renderItem={({ item }) => {
+      console.log(item); // Console log within curly braces
+      console.log(item.height);
+      const num = parseInt(item.height, 10); // The second argument specifies the base (usually 10 for decimal)
+      let nums; // Declare nums variable
+  
+      if (num >= 500) {
+        nums = num - 200; // Assign value here
+        console.log(nums);
+      } else {
+        nums = num; // Assign value here
+      }
+    
+    // Return the JSX for rendering the item
+    return (
+      <View style={isDarkMode ? styles.darksContainer : styles.postContainer}>
+        <View style={styles.postHeader}>
+          <Image source={{ uri: `https://blog.radware.com/wp-content/uploads/2020/06/anonymous.jpg` }} style={styles.profileImage} />
+          <TouchableOpacity onPress={() => handleProfileNavigation(item.username)}>
+            <Text style={isDarkMode ? styles.darkUsername : styles.username}>{item.username}</Text>
+          </TouchableOpacity>
+          <AntDesign name="ellipsis1" size={24} color="black" style={styles.threebutton}/>
+        </View>
+        <Image
+          source={{ uri: `http://192.168.42.144:5000/${item.img}` }}
+          style={{
+            width: "100%",
+            height: nums, // Use item.height directly
+            borderRadius: 20,
+            resizeMode: "cover",
+          }}
         />
-      )}
-      <TabBar/>
+        <View style={styles.iconBar}>
+          <View style={styles.iconBarLeft}>
+            <TouchableOpacity onPress={() => addLike(item.likes, item.caption)}>
+              <AntDesign name="hearto" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
+            </TouchableOpacity>
+            <AntDesign name="message1" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
+            <AntDesign name="paperclip" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
+          </View>
+        </View>
+        <Text style={isDarkMode ? styles.darkLikes : styles.likes}>{item.likes} likes</Text>
+        <Text style={isDarkMode ? styles.darkCaption : styles.caption}>{item.caption}</Text>
+      </View>
+    );
+  }}
+  refreshControl={
+    <RefreshControl
+      refreshing={isRefreshing}
+      onRefresh={handleRefresh}
+      colors={["blue"]}
+    />
+  }
+/>
+)}
+      <TabBar style={styles.tabBar}/>
     </View>
   );
 }
@@ -203,11 +278,30 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingTop: 20,
   },
+  tabBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
   threebutton: {
-    marginLeft: 230,
+    marginLeft: 'auto',
   },
   darkModeButton: {
-    marginLeft: 150,
+    marginLeft: 230,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 50, // Create space for TabBar at the bottom
+  },
+  
+  // Style for the empty message
+  emptyMessage: {
+    fontSize: 18,
+    color: '#999',
+    textAlign: 'center',
   },
   darkContainer: {
     backgroundColor: "#333", // Dark mode background color

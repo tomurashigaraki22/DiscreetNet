@@ -16,7 +16,7 @@ function Signup() {
       console.log("Signing up...");
       console.log(username);
       console.log(password);
-      const response = await fetch(`http://192.168.43.147:5000/register`, {
+      const response = await fetch(`http://192.168.42.144:5000/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

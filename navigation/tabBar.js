@@ -23,25 +23,32 @@ function TabBar() {
     <View style={styles.tabBarContainer}>
       <TouchableOpacity
         style={styles.tabItem}
-        onPress={() => navigateToScreen('Home', { params1: params1 })}
+        onPress={() => navigateToScreen('Home', { params1: params1, params2: params1, params3: params1  })}
       >
         <Ionicons name="home" size={20} color="black" />
         <Text>Home</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.tabItem}
-        onPress={() => navigateToScreen('Search', { params1 : params1 })}
+        onPress={() => navigateToScreen('Search', { params1: params1, params2: params1, params3: params1  })}
       >
         <Ionicons name="search" size={20} color="black"/>
         <Text>Search</Text>
       </TouchableOpacity>
       <TouchableOpacity
+      style={styles.tabItem}
+      onPress={() => navigateToScreen('Notifs', { params1: params1, params2: params1, params3: params1  })}>
+        <Ionicons name="notifications" size={20} color="black"/>
+        <Text>Inbox</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
         style={styles.tabItem}
-        onPress={() => navigateToScreen('Profile', { params3: params1 })}
+        onPress={() => navigateToScreen('Profile', { params1: params1, params2: params1, params3: params1 })}
       >
         <Ionicons name="person" size={20} color="black" />
         <Text>Profile</Text>
       </TouchableOpacity>
+      
       {/* Add more tab items as needed */}
     </View>
   );

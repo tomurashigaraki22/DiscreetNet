@@ -18,7 +18,7 @@ function Login() {
     console.log(password);
 
     try {
-      const response = await fetch(`https://discreetnetsv.onrender.com/login`, {
+      const response = await fetch(`http://192.168.42.144:5000/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ function Login() {
     <View style={styles.container}>
       <StatusBar hidden />
       <Text style={styles.header}>DiscreetNet</Text>
-      {showPop && <Text style={styles.notFound}>User not found</Text>}
+      {showPop && <Text style={styles.notFound}>Invalid Username Or Password</Text>}
       <TextInput
         placeholder="Username"
         placeholderTextColor="white"

@@ -10,7 +10,7 @@ import { ActivityIndicator } from "react-native";
 function AddPost({ route }) {
   const [caption, setCaption] = useState("");
   const [selectedImage, setSelectedImage] = useState('');
-  const [selectedType, setSelectedType] = useState('');
+  const [selectedSize, setSelectedSize] = useState('');
   const [selectedName, setSelectedName] = useState('');
   const navigation = useNavigation();
   const { params2 } = route.params
@@ -34,6 +34,9 @@ function AddPost({ route }) {
           // Access the selected image's uri from the assets array
           const selectedImageUri = result.assets[0].uri;
           setSelectedImage(selectedImageUri);
+          const selectedImageSize = result.assets[0].height;
+          setSelectedSize(selectedImageSize)
+          console.log(selectedImageSize)
           console.log(selectedImageUri)
         }
       } catch (err) {
@@ -60,11 +63,12 @@ const uploadImage = async () => {
       });
       formData.append('username', params2)
       formData.append('caption', caption)
+      formData.append('height', selectedSize)
       console.log('resp')
       console.log(selectedImage)
 
       
-      const response = await fetch(`http://192.168.43.147:5000/addPost/${params2}`, {
+      const response = await fetch(`http://192.168.42.144:5000/addPost/${params2}`, {
           method: 'POST',
           headers: {
               'Content-Type': 'multipart/form-data',
@@ -75,7 +79,7 @@ const uploadImage = async () => {
 
       const responseData = await response.json();
       console.log('Image upload response:', responseData);
-      navigation.navigate('Home', {params1 : params2, params2 : params2})
+      navigation.navigate('Home', {params1 : params2, params2 : params2, imgh : selectedSize})
   } catch (error) {
       console.error('Image upload error:', error);
   }

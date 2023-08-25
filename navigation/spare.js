@@ -369,3 +369,39 @@ const styles = StyleSheet.create({
 });
 
 export default AddPost;
+
+
+
+
+<FlatList
+          data={posts}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View style={isDarkMode ? styles.darksContainer : styles.postContainer}>
+              <View style={styles.postHeader}>
+                <Image source={{ uri: `http://192.168.42.144:5000/${item.img}` }} style={styles.profileImage} />
+                <TouchableOpacity onPress={() => handleProfileNavigation(item.username)}>
+                  <Text style={isDarkMode ? styles.darkUsername : styles.username}>{item.username}</Text>
+                </TouchableOpacity>
+                <AntDesign name="ellipsis1" size={24} color="black" style={styles.threebutton}/>
+              </View>
+              <Image source={{ uri: `http://192.168.42.144:5000/${item.img}` }} style={styles.postImage} />
+              <View style={styles.iconBar}>
+                <View style={styles.iconBarLeft}>
+                  <TouchableOpacity onPress={() => addLike(item.likes, item.caption)}>
+                    <AntDesign name="hearto" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
+                  </TouchableOpacity>
+                  <AntDesign name="message1" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
+                  <AntDesign name="paperclip" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
+                </View>
+              </View>
+              <Text style={isDarkMode ? styles.darkLikes : styles.likes}>{item.likes} likes</Text>
+              <Text style={isDarkMode ? styles.darkCaption : styles.caption}>{item.caption}</Text>
+            </View>
+          )}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={["blue"]}
+            />
