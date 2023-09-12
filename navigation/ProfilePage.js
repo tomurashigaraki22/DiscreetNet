@@ -43,7 +43,7 @@ function ProfilePage({ route }) {
     const formdata2 = new FormData();
     formdata2.append('to_unfollow', params1); // Corrected params3 usage
   
-    fetch(`https://discreetnetsv.onrender.com/unfollow/${params3}`, {
+    fetch(`http://192.168.43.227:5000/unfollow/${params3}`, {
       method: 'POST',
       body: formdata2
     })
@@ -63,7 +63,7 @@ function ProfilePage({ route }) {
     const formdata3 = new FormData();
     formdata3.append('to_follow', params3); // Corrected params3 usage
   
-    fetch(`https://discreetnetsv.onrender.com/addFollower/${params1}`, {
+    fetch(`http://192.168.43.227:5000/addFollower/${params1}`, {
       method: 'POST',
       body: formdata3
     })
@@ -80,7 +80,7 @@ function ProfilePage({ route }) {
   
 
   useEffect(() => {
-    fetch(`https://discreetnetsv.onrender.com/getProfile/${params3}`)
+    fetch(`http://192.168.43.227:5000/getProfile/${params3}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -95,7 +95,7 @@ function ProfilePage({ route }) {
       });
       
 
-    fetch(`https://discreetnetsv.onrender.com/checkFollow/${params1}`, {
+    fetch(`http://192.168.43.227:5000/checkFollow/${params1}`, {
       method: 'POST',
       body: formdata,
     })
@@ -120,7 +120,7 @@ function ProfilePage({ route }) {
       .catch(error => console.error(error));
       
   
-    fetch(`https://discreetnetsv.onrender.com/home/${params3}`)
+    fetch(`http://192.168.43.227:5000/home/${params3}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -195,7 +195,7 @@ function ProfilePage({ route }) {
             <View style={styles.postContainer}>
               <Image
                 style={styles.postImage}
-                source={{ uri: `https://discreetnetsv.onrender.com/${item.img}` }}
+                source={{ uri: `http://192.168.43.227:5000/${item.img}` }}
               />
             </View>
           )}
