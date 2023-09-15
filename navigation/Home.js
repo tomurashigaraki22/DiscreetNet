@@ -1,132 +1,68 @@
 import React, { useState, useEffect } from "react";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import { View, Text, FlatList, Image, StyleSheet, RefreshControl } from "react-native";
+import { View, Text, FlatList, Image, StyleSheet, RefreshControl, ActivityIndicator } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { AntDesign } from "@expo/vector-icons";
-import { Ionicons } from "react-native-vector-icons"; // Import Ionicons
-import { ActivityIndicator } from "react-native";
+import { Ionicons } from "react-native-vector-icons";
 import io from "socket.io-client";
 import TabBar from "./tabBar";
 
 function HomeScreen() {
   const [posts, setPosts] = useState([]);
-  const route = useRoute()
+  const route = useRoute();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isDarkMode, setisDarkMode] = useState(false);
-  const [noneFollowing, setNoneFollowing] = useState(false)
+  const [isFetching, setIsFetching] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [noneFollowing, setNoneFollowing] = useState(false);
   const [usernameOther, setUsernameOther] = useState("");
-  const [notifs, setNotifs] = useState([])
+  const [notifs, setNotifs] = useState([]);
+  const [lastPostId, setLastPostId] = useState('')
+  const [isEndReachedLoading, setIsEndReachedLoading] = useState(false);
   const { params1 } = route.params;
   const { params2 } = route.params;
+  const [page, setPage] = useState(initialPage); // Add this line to initialize the page state
   const navigation = useNavigation();
-  const sockets = io(`http://192.168.42.178:5000`)
+  const sockets = io(`http://192.168.42.178:5000`);
+  const perPage = 3;
+  const initialPage = 1;
 
   useEffect(() => {
     sockets.connect();
 
     sockets.on('notification', data => {
-      const newNotification = {username: data.username, message: data.message}
+      const newNotification = { username: data.username, message: data.message };
       setNotifs(prevNotifications => [...prevNotifications, newNotification]);
-      console.log(notifs)
-    })
+      console.log(notifs);
+    });
 
-  // Clean up on unmount
-  return () => {
-    sockets.disconnect();
-  };
-}, []);
+    // Clean up on unmount
+    return () => {
+      sockets.disconnect();
+    };
+  }, []);
 
   const toggleDarkMode = () => {
-    setisDarkMode(!isDarkMode);
+    setIsDarkMode(!isDarkMode);
   };
-  useEffect(() => {
-    if (params1) {
-      fetch(`https://discreetnetsv.onrender.com/main/${params1}`)
-      .then((response) => response.json())
-      .then((data) => {
-        console.log('Here: ' + data)
-        if (data.posts.length > 0) {
-          setPosts(data.posts.reverse());
-          setIsLoading(false);
-          setNoneFollowing(false)
-        } else {
-          const main = {
-            text: 'Follow your first user to get started'
-          };
-          setNoneFollowing(true)
-          setPosts([main]); // Set an array containing the main object
-          setIsLoading(false);
-        }
-      })
-      .catch((error) => console.error(error));
-    }
 
-    if (params2) {
-      fetch(`https://discreetnetsv.onrender.com/main/${params2}`)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.posts.length > 0) {
-            setPosts(data.posts.reverse());
-            setNoneFollowing(false)
-            setIsLoading(false);
-          } else {
-            const main = {
-              text: 'Follow your first user to get started'
-            };
-            setNoneFollowing(true)
-            setPosts([main]); // Set an array containing the main object
-            setIsLoading(false);
-          }
-        })
-        .catch((error) => console.error(error));
-    }
-  }, [params1, params2]);
-  
-  
-
-  useEffect(() => {
-    // Establish a WebSocket connection
-    const socket = io(`https://discreetnetsv.onrender.com/addLike/${params1}`);
-    console.log('Running')
+  const fetchPosts = () => {
     
-    // Listen for real-time updates
-    const handleLikeUpdate = (data) => {
-      setPosts((prevPosts) => {
-        return prevPosts.map((post) => {
-          if (post.id === data.id) {
-            console.log('It worked')
-            return { ...post, likes: data.likes };
-          }
-          console.log('It did not work')
-          return post;
-        });
-      });
-    };
-  
-    socket.on("like_update", handleLikeUpdate);
-  
-    // Return a cleanup function to disconnect the socket when component unmounts
-    return () => {
-      console.log('Ok na')
-    };
-  }, []); // Empty dependency array ensures the effect runs only on mount and unmount
-  
-   
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-
-    fetch(`https://discreetnetsv.onrender.com/main/${params1}`)
+    fetch(`http://192.168.43.227:5000/getPosts/${params1}`)
       .then((response) => response.json())
       .then((data) => {
-        if (data.posts.length > 0){
-          setPosts(data.posts.reverse());
-          setIsRefreshing(false);
-          setNoneFollowing(false)
+        setIsLoading(true)
+        console.log("Data received:", data); // Add this line to log the data
+        if (data.length > 0) {
+          setPosts(data);
+          setLastPostId(data[data.length - 1].id)
+          console.log('LastPostId: ', data[data.length - 1].id)
+          console.log('These are your posts: ', posts)
           setIsLoading(false)
         } else {
+          setIsLoading(false)
           setNoneFollowing(true)
         }
         
@@ -134,140 +70,210 @@ function HomeScreen() {
       .catch((error) => {
         console.error(error);
         setIsRefreshing(false);
+        setIsFetching(false);
       });
   };
 
+  const fetchMorePosts = () => {
+    fetch(`http://192.168.43.227:5000/getMorePosts/${params1}/${lastPostId}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.length > 0) {
+          // Filter out posts with IDs that already exist in the state
+          const newPosts = data.filter((newPost) => {
+            console.log('NewPost ID: ', newPost)
+            return !posts.some((existingPost) => existingPost.id === newPost.id);
+          });
+  
+          if (newPosts.length > 0) {
+            setHasMore(true);
+            setPosts((prevPosts) => [...prevPosts, ...newPosts]);
+            console.log('New Posts have been added');
+          } else {
+            setHasMore(false);
+            console.log('No new posts to add');
+          }
+        } else {
+          setHasMore(false);
+          console.log('No new postsess to add');
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        // Handle errors if necessary
+      });
+  };
+  
+  
+  
+
+  useEffect(() => {
+    if (params1) {
+      fetchPosts();
+    }
+
+    if (params2) {
+      fetchPosts();
+    }
+  }, [params1, params2]);
+
+
+  const handleLikeUpdate = (data) => {
+    setPosts((prevPosts) => {
+      return prevPosts.map((post) => {
+        if (post.id === data.id) {
+          return { ...post, likes: data.likes };
+        }
+        return post;
+      });
+    });
+  };
+
+  useEffect(() => {
+    // Establish a WebSocket connection
+    const socket = io(`http://192.168.43.227:5000/addLike/${params1}`);
+    console.log('Running');
+
+    // Listen for real-time updates
+    socket.on("like_update", handleLikeUpdate);
+
+    // Return a cleanup function to disconnect the socket when component unmounts
+    return () => {
+      console.log('Ok na');
+    };
+  }, []); // Empty dependency array ensures the effect runs only on mount and unmount
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchPosts();
+  };
+
+
   const addLike = (like_no, caption) => {
     const formdata = new FormData();
-    console.log(caption)
-    
+
     // Append the correct username and likes data based on your conditions
     if (params1) {
       formdata.append('username', params1);
       formdata.append('likes', like_no);
-      formdata.append('id', caption)
+      formdata.append('id', caption);
     } else if (params2) {
       formdata.append('username', params2);
       formdata.append('likes', like_no);
-      formdata.append('id', caption)
+      formdata.append('id', caption);
     }
-    
-    fetch(`https://discreetnetsv.onrender.com/addLike/${params1}`, {
+
+    fetch(`http://192.168.43.227:5000/addLike/${params1}`, {
       method: 'POST',
       body: formdata, // Use the FormData as the request body
     })
-    .then((response) => response.json())
-    .then((data) => {
-      console.log(data.message); // Assuming the response returns a message
-    })
-    .catch((error) => console.error(error));
-  }
-
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data.message); // Assuming the response returns a message
+      })
+      .catch((error) => console.error(error));
+  };
 
   const handleProfileNavigation = (usernames) => {
     setUsernameOther(usernames); // Set the usernameOther value
-    console.log(usernameOther)
-    navigation.navigate('Profile', { params3 : usernames, params1: params1 })
-  };  
-  
+    console.log(usernameOther);
+    navigation.navigate('Profile', { params3: usernames, params1: params1 });
+  };
+
 
   return (
     <View style={isDarkMode ? styles.darkContainer : styles.lightContainer}>
-      
-    <StatusBar hidden />
-    <View style={styles.header}>
-      
-      <Text style={isDarkMode ? styles.darkHeaderText : styles.headerText}>DiscreetNet</Text>
-      <TouchableOpacity
-        style={styles.darkModeButton}
-        onPress={toggleDarkMode}
-      >
-        {/* Use the appropriate Ionicons component for the dark mode button */}
-        {isDarkMode ? (
-          <Ionicons name="moon-outline" size={24} color="white" />
-        ) : (
-          <Ionicons name="sunny-outline" size={24} color="black" />
-        )}
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.addPostButton}
-        onPress={() => navigation.navigate("AddPost", { params2: params1 })}
-      >
-        {isDarkMode ? (
-          <AntDesign name="plus" size={24} color='white' />
-        ): (
-          <AntDesign name="plus" size={24} color="black" />
-        )}
-      </TouchableOpacity>
-    </View>
-    {noneFollowing ? (
-    <View style={styles.emptyContainer}>
-    <Text style={styles.emptyMessage}>Follow your first user to get started</Text>
-    <RefreshControl
-      refreshing={isRefreshing}
-      onRefresh={handleRefresh}
-      colors={["blue"]}
-    />
-  </View>) : (
-    <FlatList
-    data={posts}
-    keyExtractor={(item, index) => index.toString()}
-    renderItem={({ item }) => {
-      console.log(item); // Console log within curly braces
-      console.log(item.height);
-      const num = parseInt(item.height, 10); // The second argument specifies the base (usually 10 for decimal)
-      let nums; // Declare nums variable
-  
-      if (num >= 500) {
-        nums = num - 200; // Assign value here
-        console.log(nums);
-      } else {
-        nums = num; // Assign value here
-      }
-    
-    // Return the JSX for rendering the item
-    return (
-      <View style={isDarkMode ? styles.darksContainer : styles.postContainer}>
-        <View style={styles.postHeader}>
-          <Image source={{ uri: `https://blog.radware.com/wp-content/uploads/2020/06/anonymous.jpg` }} style={styles.profileImage} />
-          <TouchableOpacity onPress={() => handleProfileNavigation(item.username)}>
-            <Text style={isDarkMode ? styles.darkUsername : styles.username}>{item.username}</Text>
-          </TouchableOpacity>
-          <AntDesign name="ellipsis1" size={24} color="black" style={styles.threebutton}/>
-        </View>
-        <Image
-          source={{ uri: `https://discreetnetsv.onrender.com/${item.img}` }}
-          style={{
-            width: "100%",
-            height: nums, // Use item.height directly
-            borderRadius: 20,
-            resizeMode: "cover",
-          }}
-        />
-        <View style={styles.iconBar}>
-          <View style={styles.iconBarLeft}>
-            <TouchableOpacity onPress={() => addLike(item.likes, item.caption)}>
-              <AntDesign name="hearto" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
-            </TouchableOpacity>
-            <AntDesign name="message1" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
-            <AntDesign name="paperclip" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
-          </View>
-        </View>
-        <Text style={isDarkMode ? styles.darkLikes : styles.likes}>{item.likes} likes</Text>
-        <Text style={isDarkMode ? styles.darkCaption : styles.caption}>{item.caption}</Text>
+      <StatusBar hidden />
+      <View style={styles.header}>
+        <Text style={isDarkMode ? styles.darkHeaderText : styles.headerText}>DiscreetNet</Text>
+        <TouchableOpacity style={styles.darkModeButton} onPress={toggleDarkMode}>
+          {isDarkMode ? (
+            <Ionicons name="moon-outline" size={24} color="white" />
+          ) : (
+            <Ionicons name="sunny-outline" size={24} color="black" />
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.addPostButton} onPress={() => navigation.navigate("AddPost", { params2: params1 })}>
+          {isDarkMode ? (
+            <AntDesign name="plus" size={24} color='white' />
+          ) : (
+            <AntDesign name="plus" size={24} color="black" />
+          )}
+        </TouchableOpacity>
       </View>
-    );
-  }}
-  refreshControl={
-    <RefreshControl
-      refreshing={isRefreshing}
-      onRefresh={handleRefresh}
-      colors={["blue"]}
-    />
-  }
-/>
-)}
-      <TabBar style={styles.tabBar}/>
+      {noneFollowing ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyMessage}>Follow your first user to get started</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={posts}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => {
+            console.log(item); // Console log within curly braces
+            console.log(item.height);
+            const num = parseInt(item.height, 10); // The second argument specifies the base (usually 10 for decimal)
+            let nums; // Declare nums variable
+        
+            if (num >= 500) {
+              nums = num - 200; // Assign value here
+              console.log(nums);
+            } else {
+              nums = num; // Assign value here
+            }
+          
+            
+          // Return the JSX for rendering the item
+          return (
+            <View style={isDarkMode ? styles.darksContainer : styles.postContainer}>
+              <View style={styles.postHeader}>
+                <Image source={{ uri: `https://blog.radware.com/wp-content/uploads/2020/06/anonymous.jpg` }} style={styles.profileImage} />
+                <TouchableOpacity onPress={() => handleProfileNavigation(item.username)}>
+                  <Text style={isDarkMode ? styles.darkUsername : styles.username}>{item.username}</Text>
+                </TouchableOpacity>
+                <AntDesign name="ellipsis1" size={24} color="black" style={styles.threebutton}/>
+              </View>
+              <Image
+                source={{ uri: `http://192.168.43.227:5000/${item.img}` }}
+                style={{
+                  width: "100%",
+                  height: nums,
+                  borderRadius: 20,
+                  resizeMode: "contain", // Use 'contain' to fit the image within the container
+                }}
+              />
+
+              <View style={styles.iconBar}>
+                <View style={styles.iconBarLeft}>
+                  <TouchableOpacity onPress={() => addLike(item.likes, item.caption)}>
+                    <AntDesign name="hearto" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
+                  </TouchableOpacity>
+                  <AntDesign name="message1" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
+                  <AntDesign name="paperclip" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
+                </View>
+              </View>
+              <Text style={isDarkMode ? styles.darkLikes : styles.likes}>{item.likes} likes</Text>
+              <Text style={isDarkMode ? styles.darkCaption : styles.caption}>{item.caption}</Text>
+            </View>
+          );
+        }}
+        onRefresh={handleRefresh}
+        refreshing={isRefreshing}
+        onEndReached={() => fetchMorePosts()}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={() => {
+          if (isFetching) {
+            return <ActivityIndicator size="medium" style={styles.loadingIndicator} />;
+          } else {
+            return null;
+          }
+        }}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={["blue"]} />
+        }
+        />
+      )}
+      <TabBar style={styles.tabBar} />
     </View>
   );
 }

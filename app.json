@@ -15,7 +15,8 @@
       "assets/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.emmhud.DiscreetNet"
     },
     "android": {
       "adaptiveIcon": {

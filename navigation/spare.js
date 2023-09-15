@@ -405,3 +405,136 @@ export default AddPost;
               onRefresh={handleRefresh}
               colors={["blue"]}
             />
+
+
+
+
+
+
+
+
+
+
+
+
+            import React, { useEffect, useState } from 'react';
+            import { View, Text, TouchableOpacity } from 'react-native';
+            import { TextInput } from 'react-native-gesture-handler';
+            import io from 'socket.io-client';
+            
+            const ChatScreen = () => {
+              const [messages, setMessages] = useState([]);
+              const [message, setMessage] = useState('');
+              const [socket, setSocket] = useState(null);
+            
+              useEffect(() => {
+                // Replace 'http://your-server-url' with the URL of your Socket.IO server
+                const newSocket = io('http://192.168.43.227:5000/');
+                setSocket(newSocket);
+            
+                newSocket.on('connect', () => {
+                  console.log('Socket.IO connected');
+                });
+            
+                newSocket.on('custom_message', (receivedMessage) => {
+                  console.log('Received message:', receivedMessage);
+                  setMessages((prevMessages) => [...prevMessages, receivedMessage]);
+                });
+            
+                newSocket.on('error', (error) => {
+                  console.error('Socket.IO error:', error);
+                });
+            
+                newSocket.on('disconnect', () => {
+                  console.log('Socket.IO disconnected');
+                });
+            
+                return () => {
+                  if (newSocket) {
+                    newSocket.disconnect();
+                  }
+                };
+              }, []);
+            
+              const sendMessage = () => {
+                if (socket && socket.connected) {
+                  socket.emit('custom_message', { message, sender: 'user' }); // Corrected the sender field
+                  console.log(message)
+                  setMessage('');
+                } else {
+                  console.error('Socket.IO is not connected');
+                }
+              };
+              
+            
+              return (
+                <View>
+                  <Text>Real-time Chatrinf</Text>
+                  <View>
+                    {messages.map((msg, index) => (
+                        <Text key={index}>{msg.sender}: {msg.message}</Text>
+                    ))}
+                    </View>
+                  <TextInput
+                    value={message}
+                    onChangeText={setMessage}
+                    placeholder="Type a message..."
+                  />
+                  <TouchableOpacity onPress={sendMessage}>
+                    <Text>Send</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            };
+            
+            export default ChatScreen;
+            
+
+
+
+            renderItem={({ item }) => {
+              console.log(item); // Console log within curly braces
+              console.log(item.height);
+              const num = parseInt(item.height, 10); // The second argument specifies the base (usually 10 for decimal)
+              let nums; // Declare nums variable
+          
+              if (num >= 500) {
+                nums = num - 200; // Assign value here
+                console.log(nums);
+              } else {
+                nums = num; // Assign value here
+              }
+            
+            // Return the JSX for rendering the item
+            return (
+              <View style={isDarkMode ? styles.darksContainer : styles.postContainer}>
+                <View style={styles.postHeader}>
+                  <Image source={{ uri: `https://blog.radware.com/wp-content/uploads/2020/06/anonymous.jpg` }} style={styles.profileImage} />
+                  <TouchableOpacity onPress={() => handleProfileNavigation(item.username)}>
+                    <Text style={isDarkMode ? styles.darkUsername : styles.username}>{item.username}</Text>
+                  </TouchableOpacity>
+                  <AntDesign name="ellipsis1" size={24} color="black" style={styles.threebutton}/>
+                </View>
+                <Image
+                  source={{ uri: `http://192.168.43.227:5000/${item.img}` }}
+                  style={{
+                    width: "100%",
+                    height: nums, // Use item.height directly
+                    borderRadius: 20,
+                    resizeMode: "cover",
+                  }}
+                />
+                <View style={styles.iconBar}>
+                  <View style={styles.iconBarLeft}>
+                    <TouchableOpacity onPress={() => addLike(item.likes, item.caption)}>
+                      <AntDesign name="hearto" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
+                    </TouchableOpacity>
+                    <AntDesign name="message1" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
+                    <AntDesign name="paperclip" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
+                  </View>
+                </View>
+                <Text style={isDarkMode ? styles.darkLikes : styles.likes}>{item.likes} likes</Text>
+                <Text style={isDarkMode ? styles.darkCaption : styles.caption}>{item.caption}</Text>
+              </View>
+            );
+          }}

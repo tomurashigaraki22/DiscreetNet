@@ -4,16 +4,23 @@ import { View, Text, StyleSheet, FlatList, Image } from "react-native";
 import { Ionicons } from "react-native-vector-icons"; // Import Ionicons
 import { useState, useEffect } from "react";
 import TabBar from "./tabBar";
+import { TouchableOpacity } from "react-native-gesture-handler";
+import { useNavigation } from "@react-navigation/native";
 
 function NotificationScreen() {
   const [notifications, setNotifications] = useState([]); // Use useState to manage notifications
   const [noNotifs, setnoNotifs] = useState(false)
   const route = useRoute()
   const { params1, params3 } = route.params;
+  const navigation = useNavigation()
+
+  const handletoMessage = async (parameter) => {
+    navigation.navigate('ChatScreen', {params1: parameter})
+  }
 
   useEffect(() => {
     // Fetch data when the component mounts
-    fetch(`https://discreetnetsv.onrender.com/getNotifs/${params1}`)
+    fetch(`http://192.168.43.227:5000/getNotifs/${params1}`)
       .then((response) => response.json())
       .then((data) => {
         console.log(data)
@@ -33,8 +40,13 @@ function NotificationScreen() {
     <View style={styles.container}>
       <View style={styles.headerText}>
         <Text style={styles.header}>Notifications</Text>
-        <Ionicons name='mail' size={20} color='black' style={styles.mail}/>
+      <View style={styles.mailContainer}>
+        <TouchableOpacity onPress={() => handletoMessage(params1)} style={styles.mail}>
+          <Ionicons name='mail' size={20} color='black' />
+        </TouchableOpacity>
       </View>
+    </View>
+
       {noNotifs ? (
         <View>
           <Text>No notifications for this user</Text>
@@ -82,8 +94,11 @@ const styles = StyleSheet.create({
     marginTop: 20, // Add top margin for separation
     marginBottom: 10, // Add bottom margin for separation
   },
+  mailContainer: {
+    marginLeft: 'auto', // Pushes the mail icon container to the right
+  },
   mail: {
-    marginLeft: 'auto',
+    marginLeft: 10, // Add some spacing between "Notifications" and the mail icon
   },
   notificationContainer: {
     flexDirection: "row",
