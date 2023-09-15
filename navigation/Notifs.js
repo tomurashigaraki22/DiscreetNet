@@ -20,7 +20,7 @@ function NotificationScreen() {
 
   useEffect(() => {
     // Fetch data when the component mounts
-    fetch(`http://192.168.43.227:5000/getNotifs/${params1}`)
+    fetch(`https://discreetnetsv.onrender.com/getNotifs/${params1}`)
       .then((response) => response.json())
       .then((data) => {
         console.log(data)

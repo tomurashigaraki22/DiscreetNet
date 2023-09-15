@@ -13,6 +13,7 @@ import EditProfile from './navigation/editProfile';
 import SearchScreen from './navigation/Search';
 import NotificationScreen from './navigation/Notifs';
 import ChatScreen from './navigation/MessagingScreen';
+import PostScreen from './navigation/PostScreen';
 
 const Stack = createStackNavigator();
 
@@ -30,6 +31,7 @@ export default function App() {
         <Stack.Screen name='Search' component={SearchScreen} options={{ headerShown: false }} />
         <Stack.Screen name='Notifs' component={NotificationScreen} options={{ headerShown: false }} />
         <Stack.Screen name='ChatScreen' component={ChatScreen} options={{ headerShown: false }} />
+        <Stack.Screen name='PostScreen' component={PostScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

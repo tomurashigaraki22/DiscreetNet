@@ -6,6 +6,7 @@ import { TouchableOpacity } from "react-native-gesture-handler";
 import { AntDesign } from "@expo/vector-icons";
 import { Ionicons } from "react-native-vector-icons";
 import io from "socket.io-client";
+import { Dimensions } from "react-native";
 import TabBar from "./tabBar";
 
 function HomeScreen() {
@@ -23,6 +24,7 @@ function HomeScreen() {
   const [isEndReachedLoading, setIsEndReachedLoading] = useState(false);
   const { params1 } = route.params;
   const { params2 } = route.params;
+  const [loadingMore, setLoadingMore] = useState(false)
   const [page, setPage] = useState(initialPage); // Add this line to initialize the page state
   const navigation = useNavigation();
   const sockets = io(`http://192.168.42.178:5000`);
@@ -50,7 +52,7 @@ function HomeScreen() {
 
   const fetchPosts = () => {
     
-    fetch(`http://192.168.43.227:5000/getPosts/${params1}`)
+    fetch(`https://discreetnetsv.onrender.com/getPosts/${params1}`)
       .then((response) => response.json())
       .then((data) => {
         setIsLoading(true)
@@ -75,32 +77,41 @@ function HomeScreen() {
   };
 
   const fetchMorePosts = () => {
-    fetch(`http://192.168.43.227:5000/getMorePosts/${params1}/${lastPostId}`)
+    if (loadingMore || !hasMore) {
+      return;
+    }
+
+    setIsFetching(true);
+
+    fetch(`https://discreetnetsv.onrender.com/getMorePosts/${params1}/${lastPostId}`)
       .then((response) => response.json())
       .then((data) => {
+        setLoadingMore(true)
         if (data.length > 0) {
           // Filter out posts with IDs that already exist in the state
           const newPosts = data.filter((newPost) => {
-            console.log('NewPost ID: ', newPost)
             return !posts.some((existingPost) => existingPost.id === newPost.id);
           });
-  
+
           if (newPosts.length > 0) {
             setHasMore(true);
             setPosts((prevPosts) => [...prevPosts, ...newPosts]);
-            console.log('New Posts have been added');
+            setLoadingMore(false)
           } else {
             setHasMore(false);
-            console.log('No new posts to add');
+            setLoadingMore(false)
           }
         } else {
           setHasMore(false);
-          console.log('No new postsess to add');
+          setLoadingMore(false)
         }
+        setLoadingMore(false)
       })
       .catch((error) => {
         console.error(error);
-        // Handle errors if necessary
+      })
+      .finally(() => {
+        setIsFetching(false);
       });
   };
   
@@ -131,7 +142,7 @@ function HomeScreen() {
 
   useEffect(() => {
     // Establish a WebSocket connection
-    const socket = io(`http://192.168.43.227:5000/addLike/${params1}`);
+    const socket = io(`https://discreetnetsv.onrender.com/addLike/${params1}`);
     console.log('Running');
 
     // Listen for real-time updates
@@ -163,7 +174,7 @@ function HomeScreen() {
       formdata.append('id', caption);
     }
 
-    fetch(`http://192.168.43.227:5000/addLike/${params1}`, {
+    fetch(`https://discreetnetsv.onrender.com/addLike/${params1}`, {
       method: 'POST',
       body: formdata, // Use the FormData as the request body
     })
@@ -179,6 +190,11 @@ function HomeScreen() {
     console.log(usernameOther);
     navigation.navigate('Profile', { params3: usernames, params1: params1 });
   };
+
+  const postFullScreen = (img_uri) => {
+    console.log('Going to post full screen')
+    navigation.navigate('PostScreen', { params4: img_uri})
+  }
 
 
   return (
@@ -212,17 +228,26 @@ function HomeScreen() {
           renderItem={({ item }) => {
             console.log(item); // Console log within curly braces
             console.log(item.height);
-            const num = parseInt(item.height, 10); // The second argument specifies the base (usually 10 for decimal)
-            let nums; // Declare nums variable
-        
-            if (num >= 500) {
-              nums = num - 200; // Assign value here
-              console.log(nums);
-            } else {
-              nums = num; // Assign value here
+            const screenWidth = Dimensions.get('window').width;
+            const maxImageHeight = 500; // Set your maximum image height here
+
+            // Calculate the scaled dimensions based on screen width and aspect ratio
+            const imageAspectRatio = item.width / item.height; // Assuming you have the image's width and height
+            let scaledWidth = screenWidth; // Set the width to the screen width
+            let scaledHeight = screenWidth / imageAspectRatio; // Calculate the height based on the aspect ratio
+
+            // Ensure the height does not exceed the maximum height
+            if (scaledHeight > maxImageHeight) {
+              scaledHeight = maxImageHeight;
+              scaledWidth = maxImageHeight * imageAspectRatio;
             }
-          
-            
+
+            // Check if scaledWidth or scaledHeight became NaN and handle it
+            if (isNaN(scaledWidth) || isNaN(scaledHeight)) {
+              scaledWidth = screenWidth; // Use a default value if they are NaN
+              scaledHeight = screenWidth; // Use a default value if they are NaN
+            }
+
           // Return the JSX for rendering the item
           return (
             <View style={isDarkMode ? styles.darksContainer : styles.postContainer}>
@@ -233,16 +258,17 @@ function HomeScreen() {
                 </TouchableOpacity>
                 <AntDesign name="ellipsis1" size={24} color="black" style={styles.threebutton}/>
               </View>
-              <Image
-                source={{ uri: `http://192.168.43.227:5000/${item.img}` }}
-                style={{
-                  width: "100%",
-                  height: nums,
-                  borderRadius: 20,
-                  resizeMode: "contain", // Use 'contain' to fit the image within the container
-                }}
-              />
-
+              <TouchableOpacity onPress={() => postFullScreen(`https://discreetnetsv.onrender.com/${item.img}`)}>
+                <Image
+                  source={{ uri: `https://discreetnetsv.onrender.com/${item.img}` }}
+                  style={{
+                    borderRadius: 20,
+                    width: "100%",
+                    height: scaledHeight,
+                    resizeMode: "contain", // Use 'cover' to maintain aspect ratio and fill the container
+                  }}
+                />
+              </TouchableOpacity>
               <View style={styles.iconBar}>
                 <View style={styles.iconBarLeft}>
                   <TouchableOpacity onPress={() => addLike(item.likes, item.caption)}>
@@ -261,13 +287,12 @@ function HomeScreen() {
         refreshing={isRefreshing}
         onEndReached={() => fetchMorePosts()}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={() => {
-          if (isFetching) {
-            return <ActivityIndicator size="medium" style={styles.loadingIndicator} />;
-          } else {
-            return null;
-          }
-        }}
+        ListFooterComponent={() => (
+          // Render a loading indicator at the end
+          loadingMore ? (
+            <ActivityIndicator size="large" color="blue" />
+          ) : null
+        )}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={["blue"]} />
         }
