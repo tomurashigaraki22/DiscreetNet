@@ -1,12 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { StatusBar } from "expo-status-bar";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
-import axios from "axios";
+import { StatusBar, ImageBackground } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons } from "react-native-vector-icons";
+
 
 function Signup() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setshowPassword] = useState(false)
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
@@ -44,48 +53,79 @@ function Signup() {
 
   const toLogin = () => {
     navigation.navigate('Login');
-  }
+  };
 
   return (
-    <View style={styles.container}>
-      <StatusBar hidden />
-      <Text style={styles.header}>DiscreetNet</Text>
-      <TextInput
-        placeholder="Username"
-        placeholderTextColor="white"
-        style={styles.input}
-        value={username}
-        onChangeText={setUsername}
-      />
-      <TextInput
-        placeholder="Password"
-        placeholderTextColor="white"
-        secureTextEntry={true}
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-      />
-      <TouchableOpacity style={styles.signupButton} onPress={handleSignup} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator size="small" color="blue" /> // Show loading indicator while signing up
-        ) : (
-          <Text style={styles.signupButtonText}>Sign Up</Text>
-        )}
-      </TouchableOpacity>
+    <ImageBackground
+      source={require('./Static/bg2.jpg')} // Use require for a local background image
+      style={styles.backgroundImage}
+    >
+      <View style={styles.container}>
+        <StatusBar hidden />
+        <Text style={styles.header}>DiscreetNet</Text>
+        <TextInput
+          placeholder="Username"
+          placeholderTextColor="white"
+          style={styles.input}
+          value={username}
+          onChangeText={setUsername}
+        />
+        <View style={styles.passCont}>
+          <TextInput
+            placeholder="Password"
+            placeholderTextColor="white"
+            secureTextEntry={showPassword}
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity
+            onPress={() => setshowPassword(!showPassword)} // Toggle the showPassword state
+            style={styles.eyeIconContainer}
+          >
+            {showPassword ? (
+              <Ionicons name="eye-off" size={24} color="grey" />
+            ) : (
+              <Ionicons name="eye" size={24} color="grey" />
+            )}
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity style={styles.signupButton} onPress={handleSignup} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator size="small" color="blue" /> // Show loading indicator while signing up
+          ) : (
+            <Text style={styles.signupButtonText}>Sign Up</Text>
+          )}
+        </TouchableOpacity>
 
-      <TouchableOpacity onPress={toLogin} >
-        <Text style={styles.t1}>Already have an account? Login Here...</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity onPress={toLogin}>
+          <Text style={styles.t1}>Already have an account? Login Here...</Text>
+        </TouchableOpacity>
+        <View style={styles.anonymousTextContainer}>
+          <Text style={styles.atText}>
+            @<Text style={styles.anonymousText}>Anonymous</Text>
+          </Text>
+        </View>
+      </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000", // Background color for dark mode effect
+    backgroundColor: "rgba(0, 0, 0, 0.8)", // Semi-transparent black background
     alignItems: "center",
     justifyContent: "center",
+  },
+  atText: {
+    color: 'purple',
+    fontSize: 24,
+  },
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    resizeMode: 'cover', // Cover the entire screen with the background image
   },
   header: {
     fontSize: 36,
@@ -118,7 +158,31 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 15,
     marginTop: 20,
-  }
+  },
+  anonymousTextContainer: {
+    position: "absolute",
+    bottom: 20, // Adjust the bottom position as needed
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
+  anonymousText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "white",
+    textShadowColor: "purple", // Add text shadow with purple color
+    textShadowOffset: { width: 1, height: 1 }, // Adjust shadow offset as needed
+    textShadowRadius: 5, // Adjust shadow radius as needed
+  },
+  passCont: {
+    display: "flex",
+    flexDirection: "row",
+  },
+  eyeIconContainer: {
+    position: "absolute",
+    right: 20,
+    top: 12,
+  },
 });
 
 export default Signup;

@@ -13,14 +13,15 @@ import EditProfile from './navigation/editProfile';
 import SearchScreen from './navigation/Search';
 import NotificationScreen from './navigation/Notifs';
 import ChatScreen from './navigation/MessagingScreen';
-import PostScreen from './navigation/PostScreen';
+import FullScreenImageScreen from './navigation/PostScreen';
+import LandingPage from './navigation/LandingPage';
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName='Login'>
+      <Stack.Navigator initialRouteName='LandingPage'>
         <Stack.Screen name='Home'component={HomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name='Login' component={Login} options={{ headerShown: false }} />
         <Stack.Screen name='Signup' component={Signup} options={{ headerShown: false}} />
@@ -31,7 +32,8 @@ export default function App() {
         <Stack.Screen name='Search' component={SearchScreen} options={{ headerShown: false }} />
         <Stack.Screen name='Notifs' component={NotificationScreen} options={{ headerShown: false }} />
         <Stack.Screen name='ChatScreen' component={ChatScreen} options={{ headerShown: false }} />
-        <Stack.Screen name='PostScreen' component={PostScreen} options={{ headerShown: false }} />
+        <Stack.Screen name='PostScreen' component={FullScreenImageScreen} options={{ headerShown: false }} />
+        <Stack.Screen name='LandingPage' component={LandingPage} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
