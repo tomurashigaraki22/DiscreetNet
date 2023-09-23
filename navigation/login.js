@@ -27,7 +27,7 @@ function Login() {
 
     try {
       const response = await fetch(
-        `https://discreetnetsv.onrender.com/login`,
+        `http://192.168.43.228:5000/login`,
         {
           method: "POST",
           headers: {
@@ -74,6 +74,7 @@ function Login() {
           style={styles.input}
           value={username}
           onChangeText={setUsername}
+          autoCapitalize="none"
         />
         <View style={styles.passCont}>
           <TextInput
@@ -83,6 +84,7 @@ function Login() {
             style={styles.input}
             value={password}
             onChangeText={setPassword}
+            autoCapitalize="none"
           />
           <TouchableOpacity
             onPress={() => setShowPassword(!showPassword)} // Toggle the showPassword state
@@ -119,7 +121,7 @@ function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)", // Semi-transparent black background
+    backgroundColor: "rgba(0, 0, 0, 0.65)", // Semi-transparent black background
     alignItems: "center",
     justifyContent: "center",
   },

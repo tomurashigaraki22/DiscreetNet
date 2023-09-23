@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.8)", // Semi-transparent black background
+    backgroundColor: "rgba(0, 0, 0, 0.6)", // Semi-transparent black background
     padding: 20,
   },
   backgroundImage: {

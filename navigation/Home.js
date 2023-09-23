@@ -8,6 +8,8 @@ import { Ionicons } from "react-native-vector-icons";
 import io from "socket.io-client";
 import { Dimensions } from "react-native";
 import TabBar from "./tabBar";
+import { FontAwesome } from "@expo/vector-icons";
+
 
 function HomeScreen() {
   const [posts, setPosts] = useState([]);
@@ -21,53 +23,42 @@ function HomeScreen() {
   const [usernameOther, setUsernameOther] = useState("");
   const [notifs, setNotifs] = useState([]);
   const [lastPostId, setLastPostId] = useState('')
+  const [alreadyLikeds, setalreadyLikeds] = useState(false)
   const [isEndReachedLoading, setIsEndReachedLoading] = useState(false);
   const { params1 } = route.params;
   const { params2 } = route.params;
   const [loadingMore, setLoadingMore] = useState(false)
+  const [socket, setSocket] = useState(null)
   const [page, setPage] = useState(initialPage); // Add this line to initialize the page state
   const navigation = useNavigation();
-  const sockets = io(`http://192.168.42.178:5000`);
   const perPage = 3;
   const initialPage = 1;
-
-  useEffect(() => {
-    sockets.connect();
-
-    sockets.on('notification', data => {
-      const newNotification = { username: data.username, message: data.message };
-      setNotifs(prevNotifications => [...prevNotifications, newNotification]);
-      console.log(notifs);
-    });
-
-    // Clean up on unmount
-    return () => {
-      sockets.disconnect();
-    };
-  }, []);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
   };
 
   const fetchPosts = () => {
-    
-    fetch(`https://discreetnetsv.onrender.com/getPosts/${params1}`)
+    fetch(`http://192.168.43.228:5000/getPosts/${params1}`)
       .then((response) => response.json())
       .then((data) => {
-        setIsLoading(true)
-        console.log("Data received:", data); // Add this line to log the data
+        setIsLoading(true);
+        console.log("Data received:", data);
+  
         if (data.length > 0) {
-          setPosts(data);
-          setLastPostId(data[data.length - 1].id)
-          console.log('LastPostId: ', data[data.length - 1].id)
-          console.log('These are your posts: ', posts)
-          setIsLoading(false)
+          // Initialize the 'alreadyLiked' property for each post
+          const postsWithLikes = data.map((post) => {
+            post.alreadyLiked = false; // Add this line
+            return post;
+          });
+  
+          setPosts(postsWithLikes);
+          setLastPostId(data[data.length - 1].id);
+          setIsLoading(false);
         } else {
-          setIsLoading(false)
-          setNoneFollowing(true)
+          setIsLoading(false);
+          setNoneFollowing(true);
         }
-        
       })
       .catch((error) => {
         console.error(error);
@@ -75,6 +66,7 @@ function HomeScreen() {
         setIsFetching(false);
       });
   };
+  
 
   const fetchMorePosts = () => {
     if (loadingMore || !hasMore) {
@@ -83,7 +75,7 @@ function HomeScreen() {
 
     setIsFetching(true);
 
-    fetch(`https://discreetnetsv.onrender.com/getMorePosts/${params1}/${lastPostId}`)
+    fetch(`http://192.168.43.228:5000/getMorePosts/${params1}/${lastPostId}`)
       .then((response) => response.json())
       .then((data) => {
         setLoadingMore(true)
@@ -128,62 +120,77 @@ function HomeScreen() {
     }
   }, [params1, params2]);
 
-
-  const handleLikeUpdate = (data) => {
-    setPosts((prevPosts) => {
-      return prevPosts.map((post) => {
-        if (post.id === data.id) {
-          return { ...post, likes: data.likes };
-        }
-        return post;
-      });
-    });
-  };
-
-  useEffect(() => {
-    // Establish a WebSocket connection
-    const socket = io(`https://discreetnetsv.onrender.com/addLike/${params1}`);
-    console.log('Running');
-
-    // Listen for real-time updates
-    socket.on("like_update", handleLikeUpdate);
-
-    // Return a cleanup function to disconnect the socket when component unmounts
-    return () => {
-      console.log('Ok na');
-    };
-  }, []); // Empty dependency array ensures the effect runs only on mount and unmount
-
   const handleRefresh = () => {
     setIsRefreshing(true);
     fetchPosts();
   };
 
+  useEffect(() => {
+    const Newsocket = io('http://192.168.43.228:5000/');
+    setSocket(Newsocket);
 
-  const addLike = (like_no, caption) => {
-    const formdata = new FormData();
+    Newsocket.on('connect', () => {
+      console.log('Socket.IO connected');
+    });
 
-    // Append the correct username and likes data based on your conditions
-    if (params1) {
-      formdata.append('username', params1);
-      formdata.append('likes', like_no);
-      formdata.append('id', caption);
-    } else if (params2) {
-      formdata.append('username', params2);
-      formdata.append('likes', like_no);
-      formdata.append('id', caption);
-    }
+    Newsocket.on('already_liked', (data) => {
+      // Find the post in the state and mark it as already liked
+      const updatedPosts = posts.map((post) => {
+        if (post.id === data.id) {
+          post.alreadyLiked = true; // Update the 'alreadyLiked' property
+        }
+        return post;
+      });
+    
+      // Update the state with the updated posts
+      setPosts(updatedPosts);
+    });
+    
 
-    fetch(`https://discreetnetsv.onrender.com/addLike/${params1}`, {
-      method: 'POST',
-      body: formdata, // Use the FormData as the request body
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data.message); // Assuming the response returns a message
-      })
-      .catch((error) => console.error(error));
+    // Listen for the "liked_post" event from the server
+    Newsocket.on('liked_post', (data) => {
+      // Find the post in the state and update its like count and set alreadyLiked to true
+      const updatedPosts = posts.map((post) => {
+        if (post.id === data.id) {
+          return { ...post, likes: data.likes, alreadyLiked: true }; // Set alreadyLiked to true
+        }
+        return post;
+      });
+    
+      // Update the state with the updated posts
+      setPosts(updatedPosts);
+      setalreadyLikeds(true);
+    });
+    
+    Newsocket.on('unliked_post', (data) => {
+      // Find the post in the state and update its like count and set alreadyLiked to false
+      const updatedPosts = posts.map((post) => {
+        if (post.id === data.id) {
+          return { ...post, likes: data.likes, alreadyLiked: false }; // Set alreadyLiked to false
+        }
+        return post;
+      });
+    
+      // Update the state with the updated posts
+      setPosts(updatedPosts);
+      setalreadyLikeds(false);
+    });
+    
+
+    return () => {
+      if (Newsocket) {
+        Newsocket.disconnect();
+      }
+    };
+  }, [posts]);
+
+
+  const addLike = (id, like_no, username) => {
+    // Use the Newsocket instance here
+    socket.emit('liked_post', { id, like_no, username });
   };
+
+  
 
   const handleProfileNavigation = (usernames) => {
     setUsernameOther(usernames); // Set the usernameOther value
@@ -207,6 +214,13 @@ function HomeScreen() {
             <Ionicons name="moon-outline" size={24} color="white" />
           ) : (
             <Ionicons name="sunny-outline" size={24} color="black" />
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('VideoUpload', { params1: params1})}>
+          {isDarkMode ? (
+            <AntDesign name='camera' size={24} color='white' />
+          ) : (
+            <AntDesign name='camera' size={24} color='black' />
           )}
         </TouchableOpacity>
         <TouchableOpacity style={styles.addPostButton} onPress={() => navigation.navigate("AddPost", { params2: params1 })}>
@@ -249,6 +263,7 @@ function HomeScreen() {
             }
 
           // Return the JSX for rendering the item
+          const heartIconColor = item.alreadyLiked ? 'red' : 'black';
           return (
             <View style={isDarkMode ? styles.darksContainer : styles.postContainer}>
               <View style={styles.postHeader}>
@@ -258,9 +273,9 @@ function HomeScreen() {
                 </TouchableOpacity>
                 <AntDesign name="ellipsis1" size={24} color="black" style={styles.threebutton}/>
               </View>
-              <TouchableOpacity onPress={() => postFullScreen(`https://discreetnetsv.onrender.com/${item.img}`)}>
+              <TouchableOpacity onPress={() => postFullScreen(`http://192.168.43.228:5000/${item.img}`)}>
                 <Image
-                  source={{ uri: `https://discreetnetsv.onrender.com/${item.img}` }}
+                  source={{ uri: `http://192.168.43.228:5000/${item.img}` }}
                   style={{
                     borderRadius: 20,
                     width: "100%",
@@ -271,9 +286,23 @@ function HomeScreen() {
               </TouchableOpacity>
               <View style={styles.iconBar}>
                 <View style={styles.iconBarLeft}>
-                  <TouchableOpacity onPress={() => addLike(item.likes, item.caption)}>
-                    <AntDesign name="hearto" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
-                  </TouchableOpacity>
+                <TouchableOpacity onPress={() => addLike(item.id, item.likes, params1)}>
+                {item.alreadyLiked ? (
+                  <FontAwesome
+                    name="heart"
+                    size={24}
+                    color="red" // Filled heart color when already liked
+                    style={styles.icon}
+                  />
+                ) : (
+                  <FontAwesome
+                    name="heart-o"
+                    size={24}
+                    color="black" // Outlined heart color when not liked
+                    style={styles.icon}
+                  />
+                )}
+                </TouchableOpacity>
                   <AntDesign name="message1" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
                   <AntDesign name="paperclip" size={24} color={isDarkMode ? 'white' : 'black'} style={styles.icon} />
                 </View>

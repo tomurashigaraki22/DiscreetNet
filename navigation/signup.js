@@ -25,7 +25,7 @@ function Signup() {
       console.log("Signing up...");
       console.log(username);
       console.log(password);
-      const response = await fetch(`https://discreetnetsv.onrender.com/register`, {
+      const response = await fetch(`http://192.168.43.228:5000/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +114,7 @@ function Signup() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)", // Semi-transparent black background
+    backgroundColor: "rgba(0, 0, 0, 0.65)", // Semi-transparent black background
     alignItems: "center",
     justifyContent: "center",
   },

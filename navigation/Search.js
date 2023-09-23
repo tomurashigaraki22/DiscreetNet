@@ -15,7 +15,7 @@ function SearchScreen() {
     const handleSearch = () => {
         // Perform the search logic here
         console.log("Searching for:", searchQuery);
-        fetch(`https://discreetnetsv.onrender.com/search/${searchQuery}`)
+        fetch(`http://192.168.43.228:5000/search/${searchQuery}`)
             .then((response) => response.json())
             .then((data) => {
                 setSearchResults(data)

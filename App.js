@@ -15,6 +15,7 @@ import NotificationScreen from './navigation/Notifs';
 import ChatScreen from './navigation/MessagingScreen';
 import FullScreenImageScreen from './navigation/PostScreen';
 import LandingPage from './navigation/LandingPage';
+import VideoUpload from './navigation/VideoUpload';
 
 const Stack = createStackNavigator();
 
@@ -34,6 +35,7 @@ export default function App() {
         <Stack.Screen name='ChatScreen' component={ChatScreen} options={{ headerShown: false }} />
         <Stack.Screen name='PostScreen' component={FullScreenImageScreen} options={{ headerShown: false }} />
         <Stack.Screen name='LandingPage' component={LandingPage} options={{ headerShown: false }} />
+        <Stack.Screen name='VideoUpload' component={VideoUpload} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

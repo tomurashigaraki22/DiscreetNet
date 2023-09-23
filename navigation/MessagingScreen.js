@@ -18,7 +18,7 @@ const ChatScreen = () => {
   }, []);
 
   const fetchUsersFollowing = (username) => {
-    fetch(`https://discreetnetsv.onrender.com/getUsersFollowing/${username}`)
+    fetch(`http://192.168.43.228:5000/getUsersFollowing/${username}`)
       .then((response) => response.json())
       .then((data) => {
         setUsers(data);
