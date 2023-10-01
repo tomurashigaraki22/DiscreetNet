@@ -3,14 +3,17 @@ import { View, Text, Button, TextInput, TouchableOpacity, Image, StyleSheet } fr
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
+import { Alert } from 'react-native';
+import Video from 'react-native-video';
 
 function VideoUpload({ route }) {
   const [caption, setCaption] = useState('');
   const [selectedVideo, setSelectedVideo] = useState('');
   const [selectedVidHeight, setSelectedVidHeight] = useState('');
   const [selectedName, setSelectedName] = useState('');
+  const [isVideoSelected, setisVideoSelected] = useState(false)
   const navigation = useNavigation();
-  const { params2 } = route.params;
+  const { params1 } = route.params;
   const { refreshCallback } = route.params;
 
   useEffect(() => {
@@ -34,12 +37,21 @@ function VideoUpload({ route }) {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
       });
+      console.log(result)
 
-      if (!result.cancelled) {
-        const selectedVideoUri = result.uri;
-        setSelectedVideo(selectedVideoUri);
-        const selectedVideoSize = result.height;
-        setSelectedVidHeight(selectedVideoSize);
+      if (result.canceled != 'true') {
+        const selectedVideoUri = result.assets[0].uri;
+        const videoDuration = result.assets[0].duration;
+    
+        if (videoDuration <= 20000) {
+          setSelectedVideo(selectedVideoUri);
+          setSelectedVidHeight(result.assets[0].height);
+          console.log(`Video duration: ${videoDuration} seconds`);
+          setisVideoSelected(true);
+        } else {
+          // Handle videos longer than 20 seconds
+          Alert.alert('Video is too long', 'Please select a video shorter than 20 seconds.');
+        }
       }
     } catch (err) {
       console.log('Error picking video:', err);
@@ -63,11 +75,11 @@ function VideoUpload({ route }) {
         type: 'video/*',
         name: uniqueName,
       });
-      formData.append('username', params2);
+      formData.append('username', params1);
       formData.append('caption', caption);
       formData.append('height', selectedVidHeight);
 
-      const response = await fetch(`http://192.168.43.228:5000/addVideo/${params2}`, {
+      const response = await fetch(`http://192.168.43.228:5000/addVideo/${params1}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -76,7 +88,13 @@ function VideoUpload({ route }) {
       });
 
       const responseData = await response.json();
-      navigation.navigate('Home', { params1: params2, params2: params2, imgh: selectedVidHeight });
+      console.log(responseData)
+      if (responseData.status === 200) {
+        console.log('Video Uploaded')
+        navigation.navigate('Home', { params1: params1, imgh: selectedVidHeight });
+      } else {
+        console.log('Error Uploading')
+      }
     } catch (error) {
       console.error('Image upload error:', error);
     }
@@ -86,12 +104,14 @@ function VideoUpload({ route }) {
     <View style={styles.container}>
       <Text style={styles.header}>Upload Video</Text>
       <TouchableOpacity style={styles.selectVideo} onPress={selectVideo}>
-        {selectedVideo ? (
-          <video source={{ uri: selectedVideo }} style={styles.selectedVideo} />
+        {isVideoSelected ? (
+          <AntDesign name="checkcircle" size={24} color="green" />
+          
         ) : (
           <AntDesign name="plus" size={40} color="black" />
         )}
       </TouchableOpacity>
+
       <TextInput
         style={styles.captionInput}
         placeholder="Write a caption..."

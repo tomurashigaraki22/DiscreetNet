@@ -18,7 +18,7 @@ function SetProfile({ route }) {
 
     const handleSaveProfile = () => {
         if (bio) {
-            fetch(`https://discreetnetsv.onrender.com/addProfile`, {
+            fetch(`http://192.168.43.228:5000/addProfile`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -31,7 +31,7 @@ function SetProfile({ route }) {
             .then(response => response.json())
             .then(data => {
                 console.log("Profile saved:", data);
-                navigation.navigate('Home', { params2: params1 })
+                navigation.navigate('Home', { params2: params1, params1: params1 })
                 // You can navigate to another screen or perform additional actions here
             })
             .catch(error => {

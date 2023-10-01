@@ -41,7 +41,7 @@ function Signup() {
       console.log("Signup response:", responseData);
 
       if (response.status === 200) {
-        navigation.navigate('SetProfile', { params1: username });
+        navigation.navigate('SetProfile', { params1: username, params2: username });
       }
 
     } catch (error) {

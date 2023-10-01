@@ -16,6 +16,7 @@ import ChatScreen from './navigation/MessagingScreen';
 import FullScreenImageScreen from './navigation/PostScreen';
 import LandingPage from './navigation/LandingPage';
 import VideoUpload from './navigation/VideoUpload';
+import PersonalMessage from './navigation/PersonalMessage';
 
 const Stack = createStackNavigator();
 
@@ -36,6 +37,7 @@ export default function App() {
         <Stack.Screen name='PostScreen' component={FullScreenImageScreen} options={{ headerShown: false }} />
         <Stack.Screen name='LandingPage' component={LandingPage} options={{ headerShown: false }} />
         <Stack.Screen name='VideoUpload' component={VideoUpload} options={{ headerShown: false }} />
+        <Stack.Screen name='PersonalMessage' component={PersonalMessage} options={{ headerShown: false}} />
       </Stack.Navigator>
     </NavigationContainer>
   );

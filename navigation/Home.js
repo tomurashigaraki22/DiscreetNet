@@ -9,7 +9,7 @@ import io from "socket.io-client";
 import { Dimensions } from "react-native";
 import TabBar from "./tabBar";
 import { FontAwesome } from "@expo/vector-icons";
-
+import { Video, ResizeMode } from 'expo-av';
 
 function HomeScreen() {
   const [posts, setPosts] = useState([]);
@@ -39,7 +39,7 @@ function HomeScreen() {
   };
 
   const fetchPosts = () => {
-    fetch(`http://192.168.43.228:5000/getPosts/${params1}`)
+    fetch(`http://192.168.43.228:5000/fetchPosts/${params1}`)
       .then((response) => response.json())
       .then((data) => {
         setIsLoading(true);
@@ -74,6 +74,7 @@ function HomeScreen() {
     }
 
     setIsFetching(true);
+    setLoadingMore(true)
 
     fetch(`http://192.168.43.228:5000/getMorePosts/${params1}/${lastPostId}`)
       .then((response) => response.json())
@@ -145,6 +146,7 @@ function HomeScreen() {
       // Update the state with the updated posts
       setPosts(updatedPosts);
     });
+
     
 
     // Listen for the "liked_post" event from the server
@@ -209,27 +211,30 @@ function HomeScreen() {
       <StatusBar hidden />
       <View style={styles.header}>
         <Text style={isDarkMode ? styles.darkHeaderText : styles.headerText}>DiscreetNet</Text>
-        <TouchableOpacity style={styles.darkModeButton} onPress={toggleDarkMode}>
-          {isDarkMode ? (
-            <Ionicons name="moon-outline" size={24} color="white" />
-          ) : (
-            <Ionicons name="sunny-outline" size={24} color="black" />
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('VideoUpload', { params1: params1})}>
-          {isDarkMode ? (
-            <AntDesign name='camera' size={24} color='white' />
-          ) : (
-            <AntDesign name='camera' size={24} color='black' />
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.addPostButton} onPress={() => navigation.navigate("AddPost", { params2: params1 })}>
-          {isDarkMode ? (
-            <AntDesign name="plus" size={24} color='white' />
-          ) : (
-            <AntDesign name="plus" size={24} color="black" />
-          )}
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.darkModeButton} onPress={toggleDarkMode}>
+            {isDarkMode ? (
+              <Ionicons name="moon-outline" size={24} color="white" />
+            ) : (
+              <Ionicons name="sunny-outline" size={24} color="black" />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.cameraButton} onPress={() => navigation.navigate('VideoUpload', { params1: params1})}>
+            {isDarkMode ? (
+              <AntDesign name='camera' size={24} color='white' />
+            ) : (
+              <AntDesign name='camera' size={24} color='black' />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.addPostButton} onPress={() => navigation.navigate("AddPost", { params2: params1 })}>
+            {isDarkMode ? (
+              <AntDesign name="plus" size={24} color='white' />
+            ) : (
+              <AntDesign name="plus" size={24} color="black" />
+            )}
+          </TouchableOpacity>
+        </View>
+        
       </View>
       {noneFollowing ? (
         <View style={styles.emptyContainer}>
@@ -244,6 +249,7 @@ function HomeScreen() {
             console.log(item.height);
             const screenWidth = Dimensions.get('window').width;
             const maxImageHeight = 500; // Set your maximum image height here
+            console.log(item.isVideo)
 
             // Calculate the scaled dimensions based on screen width and aspect ratio
             const imageAspectRatio = item.width / item.height; // Assuming you have the image's width and height
@@ -262,6 +268,7 @@ function HomeScreen() {
               scaledHeight = screenWidth; // Use a default value if they are NaN
             }
 
+
           // Return the JSX for rendering the item
           const heartIconColor = item.alreadyLiked ? 'red' : 'black';
           return (
@@ -273,7 +280,24 @@ function HomeScreen() {
                 </TouchableOpacity>
                 <AntDesign name="ellipsis1" size={24} color="black" style={styles.threebutton}/>
               </View>
-              <TouchableOpacity onPress={() => postFullScreen(`http://192.168.43.228:5000/${item.img}`)}>
+              {item.isVideo ? (
+                <View style={styles.videoContainer}>
+                    <Video
+                      source={{uri: `http://192.168.43.228:5000/${item.img}`}}
+                      style={styles.video}
+                      muted={false}
+                      repeat={true}
+                      resizeMode={"contain"}
+                      rate={1.0}
+                      useNativeControls
+                      ignoreSilentSwitch={"obey"}
+                    />
+              
+                </View>
+                
+                
+              ) : (
+                <TouchableOpacity onPress={() => postFullScreen(`http://192.168.43.228:5000/${item.img}`)}>
                 <Image
                   source={{ uri: `http://192.168.43.228:5000/${item.img}` }}
                   style={{
@@ -284,6 +308,8 @@ function HomeScreen() {
                   }}
                 />
               </TouchableOpacity>
+              )}
+              
               <View style={styles.iconBar}>
                 <View style={styles.iconBarLeft}>
                 <TouchableOpacity onPress={() => addLike(item.id, item.likes, params1)}>
@@ -319,7 +345,7 @@ function HomeScreen() {
         ListFooterComponent={() => (
           // Render a loading indicator at the end
           loadingMore ? (
-            <ActivityIndicator size="large" color="blue" />
+            <ActivityIndicator size="medium" color="blue" />
           ) : null
         )}
         refreshControl={
@@ -338,6 +364,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingTop: 20,
   },
+  videoContainer: {
+    width: '100%', // Set the width to the full width of the screen
+    height: 300,   // Set the initial height as needed
+    marginBottom: 10,
+  },
+  video: {
+    flex: 1,
+    height: undefined, // Allow the video to determine its own height
+    width: '100%',     // Set the width to the full width of the container
+  },
   tabBar: {
     position: 'absolute',
     bottom: 0,
@@ -347,17 +383,17 @@ const styles = StyleSheet.create({
   threebutton: {
     marginLeft: 'auto',
   },
-  darkModeButton: {
-    marginLeft: 185,
-    paddingRight: 20,
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 50, // Create space for TabBar at the bottom
   },
-  
+  buttonContainer2: {
+    flex: 1,
+    flexDirection: 'row',
+    marginLeft: 'auto'
+  },
   // Style for the empty message
   emptyMessage: {
     fontSize: 18,
@@ -377,30 +413,33 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "space-between", // Distribute items evenly along the header
     paddingHorizontal: 10,
     marginBottom: 10,
   },
   darkHeaderText: {
     fontSize: 24,
     fontWeight: "bold",
-    fontStyle: 'italic',
-    color: 'white'
+    fontStyle: "italic",
+    color: "white",
   },
   headerText: {
     fontSize: 24,
     fontWeight: "bold",
-    fontStyle: 'italic'
+    fontStyle: "italic",
+  },
+  buttonContainer: {
+    flexDirection: "row", // Horizontal layout for buttons
+    alignItems: "center", // Center items vertically
   },
   addPostButton: {
-    padding: 10,
+    marginLeft: 20, // Add some margin between the buttons
   },
-  postContainer: {
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    backgroundColor: "#fff",
+  darkModeButton: {
+    marginLeft: 20, // Add some margin between the buttons
+  },
+  cameraButton: {
+    marginLeft: 20, // Add some margin between the buttons
   },
   darksContainer: {
     marginBottom: 20,

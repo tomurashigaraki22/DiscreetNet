@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 const ChatScreen = () => {
   const [users, setUsers] = useState([]);
+  const [socket, setSocket] = useState(null)
   const route = useRoute();
   const navigation = useNavigation()
   const { params1 } = route.params;
@@ -17,11 +18,38 @@ const ChatScreen = () => {
     fetchUsersFollowing(params1);
   }, []);
 
+  useEffect(() => {
+    const Newsocket = io('http://192.168.43.228:5000/')
+    setSocket(Newsocket)
+
+    Newsocket.on('new_message', (data) => {
+      // Handle new message received through socket.io
+      console.log('New message received:', data);
+
+      // Update the users state to indicate that the sender has sent a new message
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.username === data.sender ? { ...user, hasNewMessage: true } : user
+        )
+      );
+    });
+
+    return () => {
+      // Clean up the socket connection when the component unmounts
+      Newsocket.disconnect();
+    };
+  }, [params1]);
+
   const fetchUsersFollowing = (username) => {
     fetch(`http://192.168.43.228:5000/getUsersFollowing/${username}`)
       .then((response) => response.json())
       .then((data) => {
-        setUsers(data);
+        // Initialize the users state with a flag for new messages
+        const usersWithFlags = data.map((user) => ({
+          ...user,
+          hasNewMessage: false,
+        }));
+        setUsers(usersWithFlags);
       })
       .catch((error) => {
         console.error(error);
@@ -29,8 +57,14 @@ const ChatScreen = () => {
   };
 
   const handleUserPress = (user) => {
+    // Mark the user as read when navigating to the chat screen
+    const updatedUsers = users.map((u) =>
+      u.username === user.username ? { ...u, hasNewMessage: false } : u
+    );
+    setUsers(updatedUsers);
+
     // Navigate to the chat screen with the selected user
-    navigation.navigate('ChatWithUser', { user });
+    navigation.navigate('PersonalMessage', { params12: params1, chattingWith: user.username });
   };
 
   const renderUserItem = ({ item }) => (
@@ -38,6 +72,7 @@ const ChatScreen = () => {
       <View style={styles.userContainer}>
         <Image source={{ uri: item.img }} style={styles.userImage} />
         <Text style={styles.username}>{item.username}</Text>
+        {item.hasNewMessage && <View style={styles.newMessageDot} />}
       </View>
     </TouchableOpacity>
   );
@@ -49,7 +84,7 @@ const ChatScreen = () => {
         <Text style={styles.headerText}>Messages</Text>
         </View>
         <View style={styles.searchContainer}>
-          <TouchableOpacity onPress={() => navigation.navigate('Search')}>
+          <TouchableOpacity onPress={() => navigation.navigate('SearchUsers')}>
             <Ionicons name="search" size={24} style={styles.searchIcon} />
           </TouchableOpacity>
         </View>
@@ -110,6 +145,13 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  newMessageDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'red',
+    marginLeft: 'auto',
   },
 });
 
