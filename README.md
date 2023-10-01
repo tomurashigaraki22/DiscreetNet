@@ -13,3 +13,4 @@ Spread the Word
 Help others protect their privacy by sharing DiscreetNet with your friends and colleagues. The more people who use secure communication tools, the safer our online interactions become.
 
 Thank you for choosing DiscreetNet for your secure and private communication needs
+https://expo.dev/artifacts/eas/boFNgEWbTvWpahDqVNx7wS.apk
